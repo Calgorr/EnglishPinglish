@@ -18,7 +18,7 @@ jobs:
 
     - name: Build and Push the Docker image
       env:
-        TIMESTAMP_TAG: ${{ secrets.DOCKER_USERNAME }}/englishpinglish:$(date +%s)
+        TIMESTAMP_TAG: englishpinglish:$(date +%s)
       run: |
         docker build . --file Dockerfile --tag $TIMESTAMP_TAG
         docker push $TIMESTAMP_TAG
