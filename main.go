@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	viper, err := config.LoadConfig("config.yml")
+	viper, err := config.LoadConfig("/app/config.yml")
 	if err != nil {
 		panic(err)
 	}
