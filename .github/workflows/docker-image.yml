@@ -24,4 +24,3 @@ jobs:
     - name: Push the Docker image
       run: |
         docker push $TIMESTAMP_TAG
-        docker push englishpinglish:latest
