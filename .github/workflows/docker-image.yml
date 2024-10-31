@@ -14,11 +14,11 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
     - name: Build the Docker image
       run: |
-        TIMESTAMP_TAG=englishpinglish:$(date +%s)
+        TIMESTAMP_TAG=${{ secrets.DOCKER_USERNAME }}/englishpinglish:$(date +%s)
         docker build . --file Dockerfile --tag $TIMESTAMP_TAG
 
     - name: Push the Docker image
