@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+
+ninja_api_key: "Api key here"
+
+
+redis:
+  addr: "localhost:6379"
+  ttl: 300
