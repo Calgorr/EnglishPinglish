@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,13 +18,21 @@ type Server struct {
 	cfg       *config.Config
 	echo      *echo.Echo
 	wordsRepo repositories.WordsRepository
+	client    *http.Client // Add custom HTTP client
 }
 
 func NewServer(cfg *config.Config) *Server {
+	// Create an HTTP client that skips TLS verification
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
 	return &Server{
 		cfg:       cfg,
 		echo:      echo.New(),
 		wordsRepo: repositories.NewWordsRepository(cfg.Redis),
+		client:    client, // Initialize custom client
 	}
 }
 
@@ -48,7 +57,7 @@ func (s *Server) GetWordFromDictionary(c echo.Context) error {
 			return c.String(500, err.Error())
 		}
 		req.Header.Set("X-API-KEY", s.cfg.Ninja.NinjaAPIKey)
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := s.client.Do(req) // Use the custom client
 		if err != nil {
 			return c.String(500, err.Error())
 		}
@@ -65,7 +74,7 @@ func (s *Server) GetWordFromDictionary(c echo.Context) error {
 		}
 
 		dictResponse := struct {
-			Defenition string `json:"definition"`
+			Definition string `json:"definition"` // Fixed spelling
 		}{}
 
 		if err = json.Unmarshal(jsonData, &dictResponse); err != nil {
@@ -74,11 +83,11 @@ func (s *Server) GetWordFromDictionary(c echo.Context) error {
 		fmt.Println(dictResponse)
 
 		ttl := time.Duration(s.cfg.Redis.TTL) * time.Second
-		if err = s.wordsRepo.SetWord(c.Request().Context(), word, dictResponse.Defenition, ttl); err != nil {
+		if err = s.wordsRepo.SetWord(c.Request().Context(), word, dictResponse.Definition, ttl); err != nil {
 			return c.String(500, err.Error())
 		}
 
-		return c.String(200, "from ninja: "+dictResponse.Defenition)
+		return c.String(200, "from ninja: "+dictResponse.Definition)
 	}
 
 	return c.String(200, "from redis: "+result)
@@ -90,7 +99,7 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 		return c.String(500, err.Error())
 	}
 	req.Header.Set("X-API-KEY", s.cfg.Ninja.NinjaAPIKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s.client.Do(req) // Use the custom client
 	if err != nil {
 		return c.String(500, err.Error())
 	}
@@ -117,7 +126,7 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 			return c.String(500, err.Error())
 		}
 		req.Header.Set("X-API-KEY", s.cfg.Ninja.NinjaAPIKey)
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := s.client.Do(req) // Use the custom client
 		if err != nil {
 			return c.String(500, err.Error())
 		}
@@ -133,7 +142,7 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 		}
 
 		dictResponse := struct {
-			Defenition string `json:"definition"`
+			Definition string `json:"definition"` // Fixed spelling
 		}{}
 
 		if err = json.Unmarshal(jsonData, &dictResponse); err != nil {
@@ -141,11 +150,11 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 		}
 
 		ttl := time.Duration(s.cfg.Redis.TTL) * time.Second
-		if err = s.wordsRepo.SetWord(c.Request().Context(), randomResponse.Word[0], dictResponse.Defenition, ttl); err != nil {
+		if err = s.wordsRepo.SetWord(c.Request().Context(), randomResponse.Word[0], dictResponse.Definition, ttl); err != nil {
 			return c.String(500, err.Error())
 		}
 
-		return c.String(200, "word: "+randomResponse.Word[0]+" from ninja: "+dictResponse.Defenition)
+		return c.String(200, "word: "+randomResponse.Word[0]+" from ninja: "+dictResponse.Definition)
 	}
 
 	return c.String(200, "word: "+randomResponse.Word[0]+" from redis: "+result)

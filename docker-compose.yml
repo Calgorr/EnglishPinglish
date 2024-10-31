@@ -2,9 +2,11 @@ version: '3.8'
 
 services:
   app:
-    image: englishpinglish:v1.6
+    image: englishpinglish:v1.9
     depends_on:
       - redis
+    ports:
+      - "8080:8080"
     networks:
       - app-network
 

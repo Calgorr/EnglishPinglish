@@ -10,6 +10,6 @@ COPY --from=builder /app/englishpinglish /app/englishpinglish
 
 COPY --from=builder /app/config.yml /app/config.yml
 
-EXPOSE 5000
+EXPOSE 8080
 
 ENTRYPOINT ["/app/englishpinglish"]

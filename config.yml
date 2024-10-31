@@ -8,5 +8,5 @@ ninja:
 
 
 redis:
-  addr: "localhost:6379"
+  addr: "redis:6379"
   ttl: 300
