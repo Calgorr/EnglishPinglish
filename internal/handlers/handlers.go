@@ -14,6 +14,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+// SALAM
+
 type Server struct {
 	cfg       *config.Config
 	echo      *echo.Echo
