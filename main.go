@@ -1,6 +1,9 @@
 package main
 
-import "github.com/Calgorr/EnglishPinglish/config"
+import (
+	"github.com/Calgorr/EnglishPinglish/config"
+	"github.com/Calgorr/EnglishPinglish/internal/handlers"
+)
 
 func main() {
 	viper, err := config.LoadConfig("./config/config.yml")
@@ -11,7 +14,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	server := internal.NewRegisterService(cfg)
+	server := handlers.NewServer(cfg)
 	if err = server.Start(); err != nil {
 		panic(err)
 	}

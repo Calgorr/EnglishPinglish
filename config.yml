@@ -1,8 +1,10 @@
 server:
   port: 8080
 
-
-ninja_api_key: "Api key here"
+ninja:
+  ninja_api_key: "TcUeQDdUJ2zbSjk2WGceVw==f1oa4hpKBoJSzvpf"
+  ninja_dictionary_url: "https://api.api-ninjas.com/v1/dictionary"
+  ninja_random_url: "https://api.api-ninjas.com/v1/randomword"
 
 
 redis:
