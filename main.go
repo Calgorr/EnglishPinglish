@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/Calgorr/EnglishPinglish/config"
 	"github.com/Calgorr/EnglishPinglish/internal/handlers"
 )
 
 func main() {
-	viper, err := config.LoadConfig("./config/config.yml")
+	viper, err := config.LoadConfig("config.yml")
 	if err != nil {
 		panic(err)
 	}
@@ -14,6 +16,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println(cfg)
 	server := handlers.NewServer(cfg)
 	if err = server.Start(); err != nil {
 		panic(err)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -29,7 +30,7 @@ func NewServer(cfg *config.Config) *Server {
 func (s *Server) Start() error {
 	s.echo.Use(middleware.Logger())
 	s.echo.GET("/dictionary/:word", s.GetWordFromDictionary)
-	s.echo.POST("/random", s.GetRandomWord)
+	s.echo.GET("/random", s.GetRandomWord)
 
 	return s.echo.Start(":" + s.cfg.Server.Port)
 }
@@ -42,13 +43,19 @@ func (s *Server) GetWordFromDictionary(c echo.Context) error {
 
 	result, err := s.wordsRepo.GetWord(c.Request().Context(), word)
 	if err != nil {
-		resp, err := http.Get(s.cfg.Ninja.NinjaDictionaryURL + "/?word=" + word)
+		req, err := http.NewRequest("GET", s.cfg.Ninja.NinjaDictionaryURL+"/?word="+word, nil)
+		if err != nil {
+			return c.String(500, err.Error())
+		}
+		req.Header.Set("X-API-KEY", s.cfg.Ninja.NinjaAPIKey)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return c.String(500, err.Error())
 		}
 		defer resp.Body.Close()
-
 		if resp.StatusCode != 200 {
+			body, _ := io.ReadAll(resp.Body)
+			fmt.Println(string(body))
 			return c.String(500, "Failed to get word from dictionary")
 		}
 
@@ -58,12 +65,13 @@ func (s *Server) GetWordFromDictionary(c echo.Context) error {
 		}
 
 		dictResponse := struct {
-			Defenition string `json:"defenition"`
+			Defenition string `json:"definition"`
 		}{}
 
 		if err = json.Unmarshal(jsonData, &dictResponse); err != nil {
 			return c.String(500, err.Error())
 		}
+		fmt.Println(dictResponse)
 
 		ttl := time.Duration(s.cfg.Redis.TTL) * time.Second
 		if err = s.wordsRepo.SetWord(c.Request().Context(), word, dictResponse.Defenition, ttl); err != nil {
@@ -77,14 +85,14 @@ func (s *Server) GetWordFromDictionary(c echo.Context) error {
 }
 
 func (s *Server) GetRandomWord(c echo.Context) error {
-	resp, err := http.Get(s.cfg.Ninja.NinjaRandomURL)
+	req, err := http.NewRequest("GET", s.cfg.Ninja.NinjaRandomURL, nil)
 	if err != nil {
 		return c.String(500, err.Error())
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return c.String(500, "Failed to get random word")
+	req.Header.Set("X-API-KEY", s.cfg.Ninja.NinjaAPIKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return c.String(500, err.Error())
 	}
 
 	jsonData, err := io.ReadAll(resp.Body)
@@ -93,17 +101,23 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 	}
 
 	randomResponse := struct {
-		Word string `json:"word"`
+		Word []string `json:"word"`
 	}{}
 
 	if err = json.Unmarshal(jsonData, &randomResponse); err != nil {
+		fmt.Println(string(jsonData))
 		return c.String(500, err.Error())
 	}
 
 	// now pass the word to the dictionary
-	result, err := s.wordsRepo.GetWord(c.Request().Context(), randomResponse.Word)
+	result, err := s.wordsRepo.GetWord(c.Request().Context(), randomResponse.Word[0])
 	if err != nil {
-		resp, err := http.Get(s.cfg.Ninja.NinjaDictionaryURL + "/?word=" + randomResponse.Word)
+		req, err := http.NewRequest("GET", s.cfg.Ninja.NinjaDictionaryURL+"/?word="+randomResponse.Word[0], nil)
+		if err != nil {
+			return c.String(500, err.Error())
+		}
+		req.Header.Set("X-API-KEY", s.cfg.Ninja.NinjaAPIKey)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return c.String(500, err.Error())
 		}
@@ -119,7 +133,7 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 		}
 
 		dictResponse := struct {
-			Defenition string `json:"defenition"`
+			Defenition string `json:"definition"`
 		}{}
 
 		if err = json.Unmarshal(jsonData, &dictResponse); err != nil {
@@ -127,12 +141,12 @@ func (s *Server) GetRandomWord(c echo.Context) error {
 		}
 
 		ttl := time.Duration(s.cfg.Redis.TTL) * time.Second
-		if err = s.wordsRepo.SetWord(c.Request().Context(), randomResponse.Word, dictResponse.Defenition, ttl); err != nil {
+		if err = s.wordsRepo.SetWord(c.Request().Context(), randomResponse.Word[0], dictResponse.Defenition, ttl); err != nil {
 			return c.String(500, err.Error())
 		}
 
-		return c.String(200, "from ninja: "+dictResponse.Defenition)
+		return c.String(200, "word: "+randomResponse.Word[0]+" from ninja: "+dictResponse.Defenition)
 	}
 
-	return c.String(200, "from redis: "+result)
+	return c.String(200, "word: "+randomResponse.Word[0]+" from redis: "+result)
 }

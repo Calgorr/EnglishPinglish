@@ -2,9 +2,9 @@ server:
   port: 8080
 
 ninja:
-  ninja_api_key: "TcUeQDdUJ2zbSjk2WGceVw==f1oa4hpKBoJSzvpf"
-  ninja_dictionary_url: "https://api.api-ninjas.com/v1/dictionary"
-  ninja_random_url: "https://api.api-ninjas.com/v1/randomword"
+  ninjaapikey: "TcUeQDdUJ2zbSjk2WGceVw==f1oa4hpKBoJSzvpf"
+  ninjadictionaryurl: "https://api.api-ninjas.com/v1/dictionary"
+  ninjarandomurl: "https://api.api-ninjas.com/v1/randomword"
 
 
 redis:

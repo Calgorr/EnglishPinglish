@@ -18,9 +18,9 @@ type RedisConfig struct {
 }
 
 type NinjaConfig struct {
-	NinjaAPIKey        string `yaml:"ninja_api_key"`
-	NinjaDictionaryURL string `yaml:"ninja_dictionary_url"`
-	NinjaRandomURL     string `yaml:"ninja_random_url"`
+	NinjaAPIKey        string `yaml:"ninjaapikey"`
+	NinjaDictionaryURL string `yaml:"ninjadictionaryurl"`
+	NinjaRandomURL     string `yaml:"ninjarandomurl"`
 }
 
 func LoadConfig(filename string) (*viper.Viper, error) {
