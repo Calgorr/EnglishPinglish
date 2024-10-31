@@ -16,11 +16,9 @@ jobs:
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Build the Docker image
+    - name: Build and Push the Docker image
+      env:
+        TIMESTAMP_TAG: ${{ secrets.DOCKER_USERNAME }}/englishpinglish:$(date +%s)
       run: |
-        TIMESTAMP_TAG=${{ secrets.DOCKER_USERNAME }}/englishpinglish:$(date +%s)
         docker build . --file Dockerfile --tag $TIMESTAMP_TAG
-
-    - name: Push the Docker image
-      run: |
         docker push $TIMESTAMP_TAG
