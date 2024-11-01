@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: englishpinglish:v1.9
+    image: calgor/englishpinglish:1730402905
     depends_on:
       - redis
     ports:

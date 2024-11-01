@@ -22,6 +22,7 @@ type Server struct {
 	totalRequests *prometheus.CounterVec
 	redisHits     *prometheus.CounterVec
 	errors        *prometheus.CounterVec
+	latency       *prometheus.HistogramVec
 }
 
 func NewServer(cfg *config.Config) *Server {
@@ -51,8 +52,16 @@ func NewServer(cfg *config.Config) *Server {
 		},
 		[]string{"endpoint"},
 	)
+	latency := prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "api_latency",
+			Help:    "API latency",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"endpoint"},
+	)
 
-	prometheus.MustRegister(totalRequests, redisHits, errors)
+	prometheus.MustRegister(totalRequests, redisHits, errors, latency)
 
 	router := gin.Default()
 
@@ -67,6 +76,7 @@ func NewServer(cfg *config.Config) *Server {
 		totalRequests: totalRequests,
 		redisHits:     redisHits,
 		errors:        errors,
+		latency:       latency,
 	}
 }
 
@@ -78,6 +88,8 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) GetWordFromDictionary(c *gin.Context) {
+	start := time.Now()
+	defer func() { s.latency.WithLabelValues("GetRandomWord").Observe(time.Since(start).Seconds()) }()
 	s.totalRequests.WithLabelValues("GetWordFromDictionary").Inc()
 	word := c.Param("word")
 	if word == "" {
@@ -141,6 +153,8 @@ func (s *Server) GetWordFromDictionary(c *gin.Context) {
 }
 
 func (s *Server) GetRandomWord(c *gin.Context) {
+	start := time.Now()
+	defer func() { s.latency.WithLabelValues("GetRandomWord").Observe(time.Since(start).Seconds()) }()
 	s.totalRequests.WithLabelValues("GetRandomWord").Inc()
 
 	req, err := http.NewRequest("GET", s.cfg.Ninja.NinjaRandomURL, nil)
