@@ -33,28 +33,28 @@ func NewServer(cfg *config.Config) *Server {
 
 	totalRequests := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "api_total_requests",
+			Name: "total_requests",
 			Help: "Total number of requests for each API endpoint",
 		},
 		[]string{"endpoint"},
 	)
 	redisHits := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "api_redis_hits",
+			Name: "redis_responded_requests",
 			Help: "Number of requests answered by Redis",
 		},
 		[]string{"endpoint"},
 	)
 	errors := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "api_errors",
+			Name: "non_200_responses",
 			Help: "Number of unsuccessful responses",
 		},
 		[]string{"endpoint"},
 	)
 	latency := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "api_latency",
+			Name:    "latency",
 			Help:    "API latency",
 			Buckets: prometheus.DefBuckets,
 		},
