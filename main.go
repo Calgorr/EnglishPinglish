@@ -17,8 +17,8 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(cfg)
 	server := handlers.NewServer(cfg)
+	fmt.Println("Server is running on port 8080")
 	if err = server.Start(); err != nil {
 		panic(err)
 	}
