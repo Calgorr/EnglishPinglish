@@ -15,14 +15,15 @@ import (
 )
 
 type Server struct {
-	cfg           *config.Config
-	router        *gin.Engine
-	wordsRepo     repositories.WordsRepository
-	client        *http.Client
-	totalRequests *prometheus.CounterVec
-	redisHits     *prometheus.CounterVec
-	errors        *prometheus.CounterVec
-	latency       *prometheus.HistogramVec
+	cfg             *config.Config
+	router          *gin.Engine
+	wordsRepo       repositories.WordsRepository
+	client          *http.Client
+	totalRequests   *prometheus.CounterVec
+	redisHits       *prometheus.CounterVec
+	errors          *prometheus.CounterVec
+	successRequests *prometheus.CounterVec
+	latency         *prometheus.HistogramVec
 }
 
 func NewServer(cfg *config.Config) *Server {
@@ -35,6 +36,13 @@ func NewServer(cfg *config.Config) *Server {
 		prometheus.CounterOpts{
 			Name: "total_requests",
 			Help: "Total number of requests for each API endpoint",
+		},
+		[]string{"endpoint"},
+	)
+	successRequests := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "successful_requests",
+			Help: "Number of successful requests",
 		},
 		[]string{"endpoint"},
 	)
@@ -61,7 +69,7 @@ func NewServer(cfg *config.Config) *Server {
 		[]string{"endpoint"},
 	)
 
-	prometheus.MustRegister(totalRequests, redisHits, errors, latency)
+	prometheus.MustRegister(totalRequests, redisHits, errors, latency, successRequests)
 
 	router := gin.Default()
 
@@ -69,14 +77,15 @@ func NewServer(cfg *config.Config) *Server {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	return &Server{
-		cfg:           cfg,
-		router:        router,
-		wordsRepo:     repositories.NewWordsRepository(cfg.Redis),
-		client:        client,
-		totalRequests: totalRequests,
-		redisHits:     redisHits,
-		errors:        errors,
-		latency:       latency,
+		cfg:             cfg,
+		router:          router,
+		wordsRepo:       repositories.NewWordsRepository(cfg.Redis),
+		client:          client,
+		totalRequests:   totalRequests,
+		redisHits:       redisHits,
+		errors:          errors,
+		latency:         latency,
+		successRequests: successRequests,
 	}
 }
 
@@ -89,7 +98,7 @@ func (s *Server) Start() error {
 
 func (s *Server) GetWordFromDictionary(c *gin.Context) {
 	start := time.Now()
-	defer func() { s.latency.WithLabelValues("GetRandomWord").Observe(time.Since(start).Seconds()) }()
+	defer func() { s.latency.WithLabelValues("GetWordFromDictionary").Observe(time.Since(start).Seconds()) }()
 	s.totalRequests.WithLabelValues("GetWordFromDictionary").Inc()
 	word := c.Param("word")
 	if word == "" {
@@ -101,6 +110,7 @@ func (s *Server) GetWordFromDictionary(c *gin.Context) {
 	result, err := s.wordsRepo.GetWord(c.Request.Context(), word)
 	if err == nil {
 		s.redisHits.WithLabelValues("GetWordFromDictionary").Inc()
+		s.successRequests.WithLabelValues("GetWordFromDictionary").Inc()
 		c.String(http.StatusOK, "from redis: "+result)
 		return
 	}
@@ -149,6 +159,7 @@ func (s *Server) GetWordFromDictionary(c *gin.Context) {
 		return
 	}
 
+	s.successRequests.WithLabelValues("GetWordFromDictionary").Inc()
 	c.String(http.StatusOK, "from ninja: "+dictResponse.Definition)
 }
 
@@ -190,6 +201,7 @@ func (s *Server) GetRandomWord(c *gin.Context) {
 	result, err := s.wordsRepo.GetWord(c.Request.Context(), randomResponse.Word[0])
 	if err == nil {
 		s.redisHits.WithLabelValues("GetRandomWord").Inc()
+		s.successRequests.WithLabelValues("GetRandomWord").Inc()
 		c.String(http.StatusOK, "word: "+randomResponse.Word[0]+" from redis: "+result)
 		return
 	}
@@ -232,5 +244,6 @@ func (s *Server) GetRandomWord(c *gin.Context) {
 		return
 	}
 
+	s.successRequests.WithLabelValues("GetRandomWord").Inc()
 	c.String(http.StatusOK, "word: "+randomResponse.Word[0]+" from ninja: "+dictResponse.Definition)
 }
