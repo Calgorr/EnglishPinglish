@@ -1,6 +1,10 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"os"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
@@ -37,6 +41,9 @@ func ParseConfig(v *viper.Viper) (*Config, error) {
 	cfg := &Config{}
 	if err := v.Unmarshal(cfg); err != nil {
 		return nil, err
+	}
+	if apiKey := os.Getenv("Ninja_API_KEY"); apiKey != "" {
+		cfg.Ninja.NinjaAPIKey = apiKey
 	}
 	return cfg, nil
 }
